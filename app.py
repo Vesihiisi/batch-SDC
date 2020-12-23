@@ -175,15 +175,15 @@ def main(arguments):
 
                 claims_to_add["claims"].append(claim_data)
         edit_comment = create_edit_comment(claims_to_add)
-        write_statement(claims_to_add, mid, edit_comment)
+        #write_statement(claims_to_add, mid, edit_comment)
 
 
 def check_if_already_present(mediastatements, claim_data):
     present = False
     prop = claim_data["mainsnak"]["property"]
-    claims_in_file = mediastatements.get(prop)
 
-    if claims_in_file:
+    if mediastatements:
+        claims_in_file = mediastatements.get(prop)
         for claim_in_file in claims_in_file:
             in_file = claim_in_file["mainsnak"].get(
                 "datavalue").get("value")
