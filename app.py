@@ -3,19 +3,7 @@ import csv
 import json
 import urllib.parse
 import pywikibot
-
-PROPERTIES = {"P369": {"datatype": "qid"},
-              "P6216": {"datatype": "qid"},
-              "P518": {"datatype": "qid"},
-              "P2093": {"datatype": "string"}}
-
-# PROPERTIES = {"P6216": {"datatype": "qid"}, "P1957": {
-#     "datatype": "string"}}
-# "P369" # sandbox property for value of type "Item"
-# "P1957"  # wikisource index (string) -- works!
-
-# value={"entity-type":"item","numeric-id":1}
-# value="itsastring"
+import requests
 
 # Q29870196 70 years after death
 
@@ -39,7 +27,7 @@ def add_caption_json(language, content):
 
 
 def create_datavalue(value, valuetype):
-    if valuetype == "qid":
+    if valuetype == "wikibase-item":
         datavalue = {
             'value': {
                 'numeric-id': value[1:],
@@ -109,6 +97,13 @@ def write_caption(json_data, mid, summary):
             'Got an API error while saving page. Sleeping and skipping')
 
 
+def get_datatype(prop):
+    url = ("https://www.wikidata.org/w/api.php?action=wbgetentities"
+           "&ids={}&format=json&props=datatype")
+    response = json.loads(requests.get(url.format(prop)).text)
+    return response["entities"][prop]["datatype"]
+
+
 def write_statement(json_data, mid, summary):
     site = pywikibot.Site('commons', 'commons')
     token = site.tokens['csrf']
@@ -163,7 +158,7 @@ def main(arguments):
 
                 claim_data = create_claim_json(
                     main_property, main_value,
-                    valuetype=PROPERTIES[main_property].get("datatype"))
+                    valuetype=get_datatype(main_property))
 
                 if qualifier_properties:
                     qual_dict = {qualifier_properties[i]: qualifier_values[i]
@@ -173,21 +168,21 @@ def main(arguments):
                 claims_to_add["claims"].append(claim_data)
         edit_comment = create_edit_comment(claims_to_add)
         print(edit_comment)
-        write_statement(claims_to_add, mid, edit_comment)
+        #write_statement(claims_to_add, mid, edit_comment)
 
 
 def create_edit_comment(claims_to_add):
     properties = []
     base = "Adding {}."
     for claim in claims_to_add["claims"]:
-        properties.append("d:" + claim["mainsnak"]["property"])
+        properties.append(claim["mainsnak"]["property"])
     joined = ', '.join(properties)
     return base.format(joined)
 
 
 def add_qualifiers_to_claim(claim_data, qual_dict):
     for prop in qual_dict:
-        valuetype = PROPERTIES[prop].get("datatype")
+        valuetype = get_datatype(prop)
         datavalue = create_datavalue(qual_dict[prop], valuetype)
         qualifier = [{
             'snaktype': 'value',
