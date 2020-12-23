@@ -20,6 +20,14 @@ from collections import OrderedDict
 # api.php?action=wbsetlabel&site=enwiki&title=Earth&language=en&value=Earth
 
 
+class Helper:
+    def __init__(self):
+        pass
+
+    def clean_up_string(self, somestring):
+        return " ".join(somestring.split()).strip()
+
+
 def add_caption_json(language, content):
     caption = {
         'language': language,
@@ -138,6 +146,7 @@ def read_data(filename):
 def main(arguments):
     site = pywikibot.Site('commons', 'commons')
     data = read_data(arguments.get("data"))
+    helper = Helper()
     for row in data:
         claims_to_add = {'claims': []}
         filename = row.get("Filename")
@@ -149,7 +158,7 @@ def main(arguments):
         for key in row.keys():
             if key.startswith("Caption|"):
                 language = key.split("|")[1]
-                content = row[key]
+                content = helper.clean_up_string(row[key])
                 json_data = add_caption_json(language, content)
                 summary = "...test... Adding caption: {}".format(row[key])
                 # write_caption(json_data, mid, summary)
