@@ -4,6 +4,8 @@ import json
 import urllib.parse
 import pywikibot
 import requests
+from collections import OrderedDict
+
 
 # Q29870196 70 years after death
 
@@ -32,6 +34,7 @@ def create_datavalue(value, valuetype):
             'value': {
                 'numeric-id': value[1:],
                 'id': value,
+                'entity-type': 'item'
             },
             'type': 'wikibase-entityid',
         }
@@ -141,6 +144,8 @@ def main(arguments):
         page = pywikibot.Page(site, title='{}'.format(
             urllib.parse.quote(filename)), ns=6)
         mid = 'M' + str(page.pageid)
+        mediainfo = get_current_mediainfo(mid)
+        mediastatements = mediainfo.get("statements")
         for key in row.keys():
             if key.startswith("Caption|"):
                 language = key.split("|")[1]
@@ -148,7 +153,7 @@ def main(arguments):
                 json_data = add_caption_json(language, content)
                 summary = "...test... Adding caption: {}".format(row[key])
                 # write_caption(json_data, mid, summary)
-            if key.startswith("P"):
+            elif key.startswith("P"):
                 property_with_qualifiers = key.split("|")
                 main_property = property_with_qualifiers[0]
                 main_value = row[key].split("|")[0]
@@ -159,16 +164,34 @@ def main(arguments):
                 claim_data = create_claim_json(
                     main_property, main_value,
                     valuetype=get_datatype(main_property))
+                if check_if_already_present(mediastatements, claim_data):
+                    continue
 
                 if qualifier_properties:
                     qual_dict = {qualifier_properties[i]: qualifier_values[i]
                                  for i in range(
                         len(qualifier_properties))}
                     claim_data = add_qualifiers_to_claim(claim_data, qual_dict)
+
                 claims_to_add["claims"].append(claim_data)
         edit_comment = create_edit_comment(claims_to_add)
-        print(edit_comment)
-        #write_statement(claims_to_add, mid, edit_comment)
+        write_statement(claims_to_add, mid, edit_comment)
+
+
+def check_if_already_present(mediastatements, claim_data):
+    present = False
+    prop = claim_data["mainsnak"]["property"]
+    claims_in_file = mediastatements.get(prop)
+
+    if claims_in_file:
+        for claim_in_file in claims_in_file:
+            in_file = claim_in_file["mainsnak"].get(
+                "datavalue").get("value")
+            in_our_data = claim_data["mainsnak"].get(
+                "datavalue").get("value")
+            if sorted(in_file) == sorted(in_our_data):
+                present = True
+    return present
 
 
 def create_edit_comment(claims_to_add):
