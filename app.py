@@ -158,6 +158,9 @@ def main(arguments):
                 main_property = property_with_qualifiers[0]
                 main_value = row[key].split("|")[0]
 
+                if not row[key].strip():
+                    continue
+
                 qualifier_properties = property_with_qualifiers[1:]
                 qualifier_values = row[key].split("|")[1:]
 
