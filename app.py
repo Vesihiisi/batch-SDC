@@ -4,20 +4,6 @@ import json
 import urllib.parse
 import pywikibot
 import requests
-from collections import OrderedDict
-
-
-# Q29870196 70 years after death
-
-# {
-#       'type' : 'wikibase-entityid',
-#       'value': {
-#         'numeric-id': '80151',
-#         'id' : 'Q80151',
-#       },
-
-# CAPTION https://www.wikidata.org/w/api.php?action=help&modules=wbsetlabel
-# api.php?action=wbsetlabel&site=enwiki&title=Earth&language=en&value=Earth
 
 
 class Helper:
@@ -100,7 +86,6 @@ def write_caption(json_data, mid, summary):
         'token': token,
     }
     request = site._simple_request(**post_data)
-    print(request)
     try:
         data = request.submit()
     except pywikibot.data.api.APIError:
@@ -127,7 +112,6 @@ def write_statement(json_data, mid, summary):
                  'bot': True,
                  }
     request = site._simple_request(**post_data)
-    print(request)
     try:
         data = request.submit()
     except pywikibot.data.api.APIError:
