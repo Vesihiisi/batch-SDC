@@ -165,7 +165,7 @@ def main(arguments):
             elif key.startswith("P"):
                 property_with_qualifiers = key.split("|")
                 main_property = property_with_qualifiers[0]
-                main_value = row[key].split("|")[0]
+                main_value = helper.clean_up_string(row[key]).split("|")[0]
 
                 if not row[key].strip():
                     continue
