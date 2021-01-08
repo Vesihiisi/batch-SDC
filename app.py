@@ -82,8 +82,8 @@ def get_current_mediainfo(mediaid):
     site = pywikibot.Site('commons', 'commons')
     request = site._simple_request(action='wbgetentities', ids=mediaid)
     data = request.submit()
-    if data.get(u'entities').get(mediaid).get(u'pageid'):
-        return data.get(u'entities').get(mediaid)
+    if data.get('entities').get(mediaid).get('pageid'):
+        return data.get('entities').get(mediaid)
     return {}
 
 
@@ -145,6 +145,7 @@ def read_data(filename):
 def main(arguments):
     site = pywikibot.Site('commons', 'commons')
     data = read_data(arguments.get("data"))
+    custom_editsummary = arguments.get("summary")
     helper = Helper()
     for row in data:
         claims_to_add = {'claims': []}
@@ -159,14 +160,15 @@ def main(arguments):
                 language = key.split("|")[1]
                 content = helper.clean_up_string(row[key])
                 json_data = add_caption_json(language, content)
-                summary = "...test... Adding caption: {}".format(row[key])
-                write_caption(json_data, mid, summary)
+                summary = "Adding caption: {}".format(row[key])
+                write_caption(json_data, mid, custom_editsummary)
             elif key.startswith("P"):
                 property_with_qualifiers = key.split("|")
                 main_property = property_with_qualifiers[0]
                 main_value = helper.clean_up_string(row[key]).split("|")[0]
 
-                if not helper.validate_q(main_value, get_datatype(main_property)):
+                if not helper.validate_q(main_value,
+                                         get_datatype(main_property)):
                     continue
 
                 if not row[key].strip():
@@ -188,7 +190,8 @@ def main(arguments):
                     claim_data = add_qualifiers_to_claim(claim_data, qual_dict)
 
                 claims_to_add["claims"].append(claim_data)
-        edit_comment = create_edit_comment(claims_to_add)
+        edit_comment = create_edit_comment(claims_to_add, custom_editsummary)
+        print(edit_comment)
         write_statement(claims_to_add, mid, edit_comment)
 
 
@@ -197,7 +200,6 @@ def check_if_already_present(mediastatements, claim_data):
     prop = claim_data["mainsnak"]["property"]
 
     if mediastatements:
-        print(mediastatements)
         claims_in_file = mediastatements.get(prop)
         if claims_in_file:
             for claim_in_file in claims_in_file:
@@ -210,12 +212,14 @@ def check_if_already_present(mediastatements, claim_data):
     return present
 
 
-def create_edit_comment(claims_to_add):
+def create_edit_comment(claims_to_add, custom):
     properties = []
-    base = "Adding {}."
+    base = "Adding {}"
     for claim in claims_to_add["claims"]:
         properties.append(claim["mainsnak"]["property"])
     joined = ', '.join(properties)
+    if custom:
+        joined = "{} {}".format(joined, custom)
     return base.format(joined)
 
 
@@ -239,5 +243,6 @@ def add_qualifiers_to_claim(claim_data, qual_dict):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", required=True)
+    parser.add_argument("--summary", required=False)
     args = parser.parse_args()
     main(vars(args))
