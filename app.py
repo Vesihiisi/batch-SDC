@@ -7,11 +7,26 @@ import requests
 
 
 class Helper:
+
+    TITLES_API = ("https://www.wikidata.org/w/api.php?action=query"
+                  "&titles={}&format=json")
+
     def __init__(self):
         pass
 
     def clean_up_string(self, somestring):
         return " ".join(somestring.split()).strip()
+
+    def validate_q(self, qstring, datatype):
+        legit_value = False
+        if datatype == "string":
+            legit_value = True
+        if datatype == "wikibase-item":
+            item_data = requests.get(self.TITLES_API.format(qstring)).text
+            parsed_item_data = json.loads(item_data)
+            if "-1" not in parsed_item_data["query"]["pages"]:
+                legit_value = True
+        return legit_value
 
 
 def add_caption_json(language, content):
@@ -151,6 +166,9 @@ def main(arguments):
                 main_property = property_with_qualifiers[0]
                 main_value = helper.clean_up_string(row[key]).split("|")[0]
 
+                if not helper.validate_q(main_value, get_datatype(main_property)):
+                    continue
+
                 if not row[key].strip():
                     continue
 
@@ -171,7 +189,7 @@ def main(arguments):
 
                 claims_to_add["claims"].append(claim_data)
         edit_comment = create_edit_comment(claims_to_add)
-        #write_statement(claims_to_add, mid, edit_comment)
+        write_statement(claims_to_add, mid, edit_comment)
 
 
 def check_if_already_present(mediastatements, claim_data):
@@ -200,8 +218,11 @@ def create_edit_comment(claims_to_add):
 
 
 def add_qualifiers_to_claim(claim_data, qual_dict):
+    helper = Helper()
     for prop in qual_dict:
         valuetype = get_datatype(prop)
+        if not helper.validate_q(qual_dict[prop], valuetype):
+            continue
         datavalue = create_datavalue(qual_dict[prop], valuetype)
         qualifier = [{
             'snaktype': 'value',
