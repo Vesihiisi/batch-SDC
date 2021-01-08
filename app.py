@@ -160,7 +160,7 @@ def main(arguments):
                 content = helper.clean_up_string(row[key])
                 json_data = add_caption_json(language, content)
                 summary = "...test... Adding caption: {}".format(row[key])
-                # write_caption(json_data, mid, summary)
+                write_caption(json_data, mid, summary)
             elif key.startswith("P"):
                 property_with_qualifiers = key.split("|")
                 main_property = property_with_qualifiers[0]
@@ -197,14 +197,16 @@ def check_if_already_present(mediastatements, claim_data):
     prop = claim_data["mainsnak"]["property"]
 
     if mediastatements:
+        print(mediastatements)
         claims_in_file = mediastatements.get(prop)
-        for claim_in_file in claims_in_file:
-            in_file = claim_in_file["mainsnak"].get(
-                "datavalue").get("value")
-            in_our_data = claim_data["mainsnak"].get(
-                "datavalue").get("value")
-            if sorted(in_file) == sorted(in_our_data):
-                present = True
+        if claims_in_file:
+            for claim_in_file in claims_in_file:
+                in_file = claim_in_file["mainsnak"].get(
+                    "datavalue").get("value")
+                in_our_data = claim_data["mainsnak"].get(
+                    "datavalue").get("value")
+                if sorted(in_file) == sorted(in_our_data):
+                    present = True
     return present
 
 
