@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import logging
 import urllib.parse
 import pywikibot
 import requests
@@ -103,6 +104,8 @@ def write_caption(json_data, mid, summary):
     request = site._simple_request(**post_data)
     try:
         data = request.submit()
+        logging.info("Adding caption in {} : {} {}".format(
+            json_data.get("language"), json_data.get("value"), summary))
     except pywikibot.data.api.APIError:
         pywikibot.output(
             'Got an API error while saving page. Sleeping and skipping')
@@ -129,6 +132,7 @@ def write_statement(json_data, mid, summary):
     request = site._simple_request(**post_data)
     try:
         data = request.submit()
+        logging.info(summary)
     except pywikibot.data.api.APIError:
         pywikibot.output(
             'Got an API error while saving page. Sleeping and skipping')
@@ -143,6 +147,13 @@ def read_data(filename):
 
 
 def main(arguments):
+    logname = "log.log"
+    print("Logging to {}.".format(logname))
+    logging.basicConfig(filename=logname,
+                        filemode='a',
+                        format='%(asctime)s;%(levelname)s;%(message)s',
+                        datefmt='%H:%M:%S',
+                        level=logging.INFO)
     site = pywikibot.Site('commons', 'commons')
     data = read_data(arguments.get("data"))
     custom_editsummary = arguments.get("summary")
