@@ -160,7 +160,6 @@ def main(arguments):
                 language = key.split("|")[1]
                 content = helper.clean_up_string(row[key])
                 json_data = add_caption_json(language, content)
-                summary = "Adding caption: {}".format(row[key])
                 write_caption(json_data, mid, custom_editsummary)
             elif key.startswith("P"):
                 property_with_qualifiers = key.split("|")
@@ -191,7 +190,6 @@ def main(arguments):
 
                 claims_to_add["claims"].append(claim_data)
         edit_comment = create_edit_comment(claims_to_add, custom_editsummary)
-        print(edit_comment)
         write_statement(claims_to_add, mid, edit_comment)
 
 
@@ -216,7 +214,10 @@ def create_edit_comment(claims_to_add, custom):
     properties = []
     base = "Adding {}"
     for claim in claims_to_add["claims"]:
-        properties.append(claim["mainsnak"]["property"])
+        linked_property = "[[:d:Property:{}|{}]]".format(
+            claim["mainsnak"]["property"],
+            claim["mainsnak"]["property"])
+        properties.append(linked_property)
     joined = ', '.join(properties)
     if custom:
         joined = "{} {}".format(joined, custom)
